@@ -11,87 +11,51 @@ import android.widget.ListView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        AddCityFragment.AddCityDialogListener {
+    private ArrayList<City> dataList;
+    private ListView cityList;
+    private CityArrayAdapter cityAdapter;
 
-    ListView cityList;
-    Button addButton, deleteButton;
+    @Override
+    public void addCity(City city) {
+        cityAdapter.add(city);
+        cityAdapter.notifyDataSetChanged();
+    }
 
-    ArrayAdapter<String> cityAdapter;
-    ArrayList<String> dataList;
-
-    int selectedIndex = -1;   // keeps track of selected city
+    @Override
+    public void editCity(City city, int position) {
+        dataList.set(position, city);
+        cityAdapter.notifyDataSetChanged();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        cityList = findViewById(R.id.city_list);
-        addButton = findViewById(R.id.add_button);
-        deleteButton = findViewById(R.id.delete_button);
-
-        String[] cities = {"Edmonton", "Vancouver", "Moscow", "Sydney",
-                "Berlin", "Vienna", "Tokyo", "Beijing", "Osaka", "New Delhi"};
-
+        String[] cities = { "Edmonton", "Vancouver", "Toronto" };
+        String[] provinces = { "AB", "BC", "ON" };
         dataList = new ArrayList<>();
-        dataList.addAll(Arrays.asList(cities));
-
-        cityAdapter = new ArrayAdapter<>(this, R.layout.content, dataList);
+        for (int i = 0; i < cities.length; i++) {
+            dataList.add(new City(cities[i], provinces[i]));
+        }
+        cityList = findViewById(R.id.city_list);
+        cityAdapter = new CityArrayAdapter(this, dataList);
         cityList.setAdapter(cityAdapter);
 
-        // Selecting a city
-        cityList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                selectedIndex = position;
-            }
+        cityList.setOnItemClickListener((parent, view, position, id) -> {
+            City cityToEdit = dataList.get(position);
+            AddCityFragment.newInstance(cityToEdit, position).show(getSupportFragmentManager(), "Edit City");
         });
 
-        // ADD CITY
-        addButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAddDialog();
-            }
+        FloatingActionButton fab = findViewById(R.id.button_add_city);
+        fab.setOnClickListener(v -> {
+            new AddCityFragment().show(getSupportFragmentManager(), "Add City");
         });
-
-        // DELETE CITY
-        deleteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if (selectedIndex != -1) {
-                    dataList.remove(selectedIndex);
-                    cityAdapter.notifyDataSetChanged();
-                    selectedIndex = -1;
-                }
-            }
-        });
-    }
-
-    private void showAddDialog() {
-
-        EditText input = new EditText(this);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Add City")
-                .setMessage("Enter city name:")
-                .setView(input)
-                .setPositiveButton("CONFIRM", (dialogInterface, i) -> {
-
-                    String city = input.getText().toString();
-
-                    if (!city.isEmpty()) {
-                        dataList.add(city);
-                        cityAdapter.notifyDataSetChanged();
-                    }
-                })
-                .setNegativeButton("CANCEL", null)
-                .create();
-
-        dialog.show();
     }
 }
